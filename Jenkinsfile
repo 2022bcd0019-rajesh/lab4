@@ -4,10 +4,11 @@ pipeline {
     stages {
 
         stage('Install Dependencies') {
-            steps {
-                sh 'pip install -r requirements.txt'
-            }
-        }
+    steps {
+        sh 'pip install --break-system-packages -r requirements.txt'
+    }
+}
+
 
         stage('Train Model') {
             steps {
