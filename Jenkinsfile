@@ -5,7 +5,7 @@ pipeline {
 
         stage('Clone') {
             steps {
-                git 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
+                git 'https://github.com/2022bcd0019-rajesh/lab4.git'
             }
         }
 
@@ -23,7 +23,7 @@ pipeline {
 
         stage('Print Metrics') {
             steps {
-                echo "Name: Rajeshwar Reddy"
+                echo "Name: V. Raajeshwar Reddy"
                 echo "Roll No: 2022BCD0019"
                 sh 'python evaluate.py'
             }
@@ -31,13 +31,13 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t YOUR_DOCKERHUB_USERNAME/model:latest .'
+                sh 'docker build -t rajeshwar250/wine_predict_2022bcd0019:latest .'
             }
         }
 
         stage('Docker Push') {
             steps {
-                sh 'docker push YOUR_DOCKERHUB_USERNAME/model:latest'
+                sh 'docker push rajeshwar250/wine_predict_2022bcd0019:latest'
             }
         }
     }
