@@ -15,8 +15,7 @@ pipeline {
 
         stage('Train Model') {
             steps {
-                // adjust if filename different
-                sh 'python3 scripts/train.py || echo "No train.py found, skipping training"'
+                sh 'python3 scripts/train.py'
             }
         }
 
@@ -24,7 +23,7 @@ pipeline {
             steps {
                 echo "Name: V. Raajeshwar Reddy"
                 echo "Roll No: 2022BCD0019"
-                sh 'python3 scripts/evaluate.py || echo "No evaluate.py found, skipping evaluation"'
+                sh 'python3 scripts/evaluate.py || echo "evaluate.py not present — skipping"'
             }
         }
 
@@ -50,3 +49,4 @@ pipeline {
         }
     }
 }
+
