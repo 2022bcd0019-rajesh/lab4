@@ -1,0 +1,160 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "rajeshwar250/wine_predict_2022bcd0019:latest"
+        CONTAINER_NAME = "wine-inference-test"
+        API_URL = "http://localhost:8000"
+        PREDICT_ENDPOINT = "/predict"
+    }
+
+    stages {
+
+        stage('Pull Image') {
+            steps {
+                echo "Pulling Docker image from Docker Hub..."
+                sh "docker pull ${IMAGE_NAME}"
+            }
+        }
+
+        stage('Run Container') {
+            steps {
+                echo "Starting inference container..."
+                sh """
+                    docker rm -f ${CONTAINER_NAME} || true
+                    docker run -d -p 8000:8000 --name ${CONTAINER_NAME} ${IMAGE_NAME}
+                """
+            }
+        }
+
+        stage('Wait for Service Readiness') {
+            steps {
+                echo "Checking if API is ready..."
+                script {
+
+                    def retries = 15
+                    def ready = false
+
+                    for (int i = 0; i < retries; i++) {
+
+                        def status = sh(
+                            script: "curl -s -o /dev/null -w '%{http_code}' ${API_URL}/docs || true",
+                            returnStdout: true
+                        ).trim()
+
+                        echo "API status: ${status}"
+
+                        if (status == "200") {
+                            ready = true
+                            echo "API is ready."
+                            break
+                        }
+
+                        sleep 5
+                    }
+
+                    if (!ready) {
+                        error "API did not start within expected time."
+                    }
+                }
+            }
+        }
+
+        stage('Send Valid Inference Request') {
+            steps {
+                echo "Sending valid inference request..."
+
+                script {
+
+                    def validPayload = '''
+                    {
+                      "fixed_acidity": 7.4,
+                      "volatile_acidity": 0.70,
+                      "citric_acid": 0.00,
+                      "residual_sugar": 1.9,
+                      "chlorides": 0.076,
+                      "free_sulfur_dioxide": 11.0,
+                      "total_sulfur_dioxide": 34.0,
+                      "density": 0.9978,
+                      "pH": 3.51,
+                      "sulphates": 0.56,
+                      "alcohol": 9.4
+                    }
+                    '''
+
+                    def response = sh(
+                        script: """curl -s -X POST ${API_URL}${PREDICT_ENDPOINT} \
+                        -H "Content-Type: application/json" \
+                        -d '${validPayload}'""",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "API Response: ${response}"
+
+                    if (!response.contains("wine_quality")) {
+                        error "Prediction validation failed: wine_quality not found."
+                    }
+
+                    echo "Valid inference test passed."
+                }
+            }
+        }
+
+        stage('Send Invalid Request') {
+            steps {
+                echo "Sending invalid request to test error handling..."
+
+                script {
+
+                    def invalidPayload = '''
+                    {
+                      "fixed_acidity": 7.4
+                    }
+                    '''
+
+                    def status = sh(
+                        script: """curl -s -o response.txt -w '%{http_code}' \
+                        -X POST ${API_URL}${PREDICT_ENDPOINT} \
+                        -H "Content-Type: application/json" \
+                        -d '${invalidPayload}'""",
+                        returnStdout: true
+                    ).trim()
+
+                    def body = sh(script: "cat response.txt", returnStdout: true).trim()
+
+                    echo "Invalid Response Body: ${body}"
+                    echo "HTTP Status Code: ${status}"
+
+                    if (status == "200") {
+                        error "Invalid request should not return HTTP 200."
+                    }
+
+                    echo "Invalid request test passed."
+                }
+            }
+        }
+
+        stage('Stop Container') {
+            steps {
+                echo "Stopping and removing container..."
+                sh "docker rm -f ${CONTAINER_NAME} || true"
+            }
+        }
+    }
+
+    post {
+
+        always {
+            echo "Cleaning up container if still running..."
+            sh "docker rm -f ${CONTAINER_NAME} || true"
+        }
+
+        success {
+            echo "PIPELINE PASSED: Model inference validated successfully."
+        }
+
+        failure {
+            echo "PIPELINE FAILED: Validation checks did not pass."
+        }
+    }
+}
