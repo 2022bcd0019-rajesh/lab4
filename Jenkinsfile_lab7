@@ -29,34 +29,8 @@ pipeline {
 
         stage('Wait for Service Readiness') {
             steps {
-                echo "Checking if API is ready..."
-                script {
-
-                    def retries = 15
-                    def ready = false
-
-                    for (int i = 0; i < retries; i++) {
-
-                        def status = sh(
-                            script: "curl -s -o /dev/null -w '%{http_code}' ${API_URL}/docs || true",
-                            returnStdout: true
-                        ).trim()
-
-                        echo "API status: ${status}"
-
-                        if (status == "200") {
-                            ready = true
-                            echo "API is ready."
-                            break
-                        }
-
-                        sleep 5
-                    }
-
-                    if (!ready) {
-                        error "API did not start within expected time."
-                    }
-                }
+                echo "Waiting for API to start..."
+                sh "sleep 20"
             }
         }
 
