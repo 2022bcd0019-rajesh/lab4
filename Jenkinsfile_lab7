@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "rajeshwar250/wine_predict_2022bcd0019:latest"
         CONTAINER_NAME = "wine-inference-test"
-        API_URL = "http://localhost:8000"
+        API_URL = "http://host.docker.internal:8000"
         PREDICT_ENDPOINT = "/predict"
     }
 
@@ -12,7 +12,7 @@ pipeline {
 
         stage('Pull Image') {
             steps {
-                echo "Pulling Docker image from Docker Hub..."
+                echo "Pulling Docker image..."
                 sh "docker pull ${IMAGE_NAME}"
             }
         }
@@ -69,14 +69,14 @@ pipeline {
                         error "Prediction validation failed: wine_quality not found."
                     }
 
-                    echo "Valid inference test passed."
+                    echo "Valid inference request passed."
                 }
             }
         }
 
         stage('Send Invalid Request') {
             steps {
-                echo "Sending invalid request to test error handling..."
+                echo "Sending invalid inference request..."
 
                 script {
 
@@ -103,14 +103,14 @@ pipeline {
                         error "Invalid request should not return HTTP 200."
                     }
 
-                    echo "Invalid request test passed."
+                    echo "Invalid request validation passed."
                 }
             }
         }
 
         stage('Stop Container') {
             steps {
-                echo "Stopping and removing container..."
+                echo "Stopping container..."
                 sh "docker rm -f ${CONTAINER_NAME} || true"
             }
         }
@@ -119,7 +119,7 @@ pipeline {
     post {
 
         always {
-            echo "Cleaning up container if still running..."
+            echo "Cleaning up container..."
             sh "docker rm -f ${CONTAINER_NAME} || true"
         }
 
