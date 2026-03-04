@@ -42,7 +42,7 @@ pipeline {
 
                     def validPayload = '''
                     {
-                      "fixed_acidity": 7.4,
+                      "fixed_acidity": 'attack',
                       "volatile_acidity": 0.70,
                       "citric_acid": 0.00,
                       "residual_sugar": 1.9,
